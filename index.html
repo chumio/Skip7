@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkipSeven Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>SkipSeven</h1>
+        
+        <!-- Player Setup Section -->
+        <div id="setup-container">
+            <h2>Register Players</h2>
+            <div class="input-group">
+                <input type="text" id="player-name-input" placeholder="Enter player's first name">
+                <button id="add-player-btn">Add Player</button>
+            </div>
+            <ul id="player-list"></ul>
+            <button id="start-game-btn" class="start-button">Start Game</button>
+        </div>
+
+        <!-- Main Game Section (Initially Hidden) -->
+        <div id="game-container" class="hidden">
+            <h2 id="turn-indicator"></h2>
+            <p id="round-counter"></p>
+            
+            <p class="rules">
+                <strong>Rules:</strong> Cards 0-12. Use '.' to separate. Use '*' to multiply. First to 200 wins!
+            </p>
+
+            <div class="input-group">
+                <input type="text" id="cards-input" placeholder="e.g., 5.10.12 or 5.10*2">
+                <button id="log-score-btn">Log Round Score</button>
+            </div>
+
+            <h3>Scoreboard</h3>
+            <div id="scoreboard"></div>
+        </div>
+
+        <!-- Winner Announcement Section (Initially Hidden) -->
+        <div id="winner-announcement" class="hidden">
+            <h2 id="winner-text"></h2>
+            <button id="new-game-btn">Play New Game</button>
+        </div>
+
+        <!-- All-Time Winners Leaderboard -->
+        <div id="all-time-leaderboard">
+            <h3>🏆 All-Time Winners 🏆</h3>
+            <ul id="winners-list">
+                <!-- Winners will be loaded here from browser storage -->
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkipSeven Game</title>
     <link rel="stylesheet" href="style.css">
-    <!-- For the fireworks effect -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -36,12 +35,8 @@
             <!-- Interactive Card Selection Area -->
             <div id="card-selection-area">
                 <p>Current Hand Value: <b id="current-hand-total">0</b></p>
-                <div id="card-selection-container">
-                    <!-- Number cards will be generated here -->
-                </div>
-                <div id="action-card-container">
-                    <!-- Action cards will be generated here -->
-                </div>
+                <div id="card-selection-container"></div>
+                <div id="action-card-container"></div>
                 <button id="log-score-btn" class="log-score-button">Log Round Score</button>
             </div>
 
@@ -58,18 +53,18 @@
         <!-- All-Time Winners Leaderboard -->
         <div id="all-time-leaderboard">
             <h3>🏆 All-Time Winners 🏆</h3>
-            <ul id="winners-list">
-                <!-- Winners will be loaded here from browser storage -->
-            </ul>
+            <ul id="winners-list"></ul>
         </div>
 
         <!-- Version Number Display -->
         <p id="version-info"></p>
-
     </div>
 
-    <!-- For the bonus sound effect -->
+    <!-- Audio files -->
     <audio id="bonus-sound" src="bonus-chime.mp3" preload="auto"></audio>
+    <audio id="select-sound" src="select-beep.mp3" preload="auto"></audio>
+    <audio id="deselect-sound" src="deselect-beep.mp3" preload="auto"></audio>
+    
     <script src="script.js"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMultiplier = 1;   
     let currentBonusPoints = 0;   
 
-    // --- ELEMENT REFERENCES ---
+    // --- ELEMENT REFERENCES ---ƒ
     const setupContainer = document.getElementById('setup-container');
     const playerNameInput = document.getElementById('player-name-input');
     const addPlayerBtn = document.getElementById('add-player-btn');
@@ -105,23 +105,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GAME LOGIC FUNCTIONS ---
     function triggerCelebration() {
-    // Play the sound
-    bonusSound.currentTime = 0; // Rewind to start in case it's played again quickly
-    bonusSound.play();
+    // Play the sound with error handling
+    const playPromise = bonusSound.play();
+    if (playPromise !== undefined) {
+        playPromise.then(_ => {
+            // Automatic playback started!
+            bonusSound.currentTime = 0; // Rewind to start
+        }).catch(error => {
+            // Autoplay was prevented.
+            console.error("Audio playback error: ", error);
+        });
+    }
 
     // Launch the fireworks!
     const duration = 1 * 1000;
     const end = Date.now() + duration;
 
     (function frame() {
-        // launch a few confetti from the left edge
         confetti({
             particleCount: 7,
             angle: 60,
             spread: 55,
             origin: { x: 0 }
         });
-        // and launch a few from the right edge
         confetti({
             particleCount: 7,
             angle: 120,
@@ -129,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
             origin: { x: 1 }
         });
 
-        // keep going until we are out of time
         if (Date.now() < end) {
             requestAnimationFrame(frame);
         }

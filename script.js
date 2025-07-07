@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.3"; // Updated version for debugging
+    const version = "v1.33"; // Updated version for debugging
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;

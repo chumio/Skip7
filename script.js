@@ -32,8 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const winnerAnnouncement = document.getElementById('winner-announcement');
     const winnerText = document.getElementById('winner-text');
     const newGameBtn = document.getElementById('new-game-btn');
-    
     const winnersList = document.getElementById('winners-list');
+    const bonusSound = document.getElementById('bonus-sound');
 
     // --- INITIALIZATION ---
     initializeLeaderboard();
@@ -104,6 +104,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- GAME LOGIC FUNCTIONS ---
+    function triggerCelebration() {
+    // Play the sound
+    bonusSound.currentTime = 0; // Rewind to start in case it's played again quickly
+    bonusSound.play();
+
+    // Launch the fireworks!
+    const duration = 1 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+        // launch a few confetti from the left edge
+        confetti({
+            particleCount: 7,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+        });
+        // and launch a few from the right edge
+        confetti({
+            particleCount: 7,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+        });
+
+        // keep going until we are out of time
+        if (Date.now() < end) {
+            requestAnimationFrame(frame);
+        }
+    }());
+}
+    
  function calculateHandScore(cardsArray) {
         if (!cardsArray || cardsArray.length === 0) {
             return 0;
@@ -220,11 +252,10 @@ function processTurn(forcedScore = null) {
         }
     }
 
- function handleCardClick(event) {
+function handleCardClick(event) {
     const cardButton = event.currentTarget;
     const cardValue = parseInt(cardButton.dataset.value, 10);
 
-    // Toggle selection
     const isSelected = cardButton.classList.toggle('selected');
 
     if (isSelected) {
@@ -233,11 +264,11 @@ function processTurn(forcedScore = null) {
         currentTurnCards = currentTurnCards.filter(value => value !== cardValue);
     }
 
-    // --- The new "Skip 7" bonus logic ---
+    // --- The new "Skip 7" bonus logic with celebration ---
     if (currentTurnCards.length === 7) {
-        updateCurrentHandTotalDisplay(); // Update display one last time
-        // Use a timeout to let the player see the bonus score before the turn ends
-        setTimeout(triggerSkip7Bonus, 800); 
+        triggerCelebration(); // <-- TRIGGER THE EFFECTS!
+        updateCurrentHandTotalDisplay(); 
+        setTimeout(triggerSkip7Bonus, 1500); // Increased timeout to enjoy the show
     } else {
         updateCurrentHandTotalDisplay();
     }

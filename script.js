@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let roundNumber = 1;
     const winningScore = 200;
     let gameOver = false;
+    let currentTurnCards = [];
 
     // --- ELEMENT REFERENCES ---
     const setupContainer = document.getElementById('setup-container');
@@ -20,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameContainer = document.getElementById('game-container');
     const turnIndicator = document.getElementById('turn-indicator');
     const roundCounter = document.getElementById('round-counter');
-    const cardsInput = document.getElementById('cards-input');
+    const cardSelectionContainer = document.getElementById('card-selection-container');
+    const currentHandTotal = document.getElementById('current-hand-total');
     const logScoreBtn = document.getElementById('log-score-btn');
     const scoreboard = document.getElementById('scoreboard');
 
@@ -39,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logScoreBtn.addEventListener('click', processTurn);
     newGameBtn.addEventListener('click', resetGame);
     playerNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') addPlayer(); });
-    cardsInput.addEventListener('keyup', e => { if (e.key === 'Enter') processTurn(); });
+    
 
     // --- SETUP & LEADERBOARD FUNCTIONS ---
     function addPlayer() {
@@ -93,39 +95,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setupContainer.classList.add('hidden');
         gameContainer.classList.remove('hidden');
+        createCardButtons();
         updateTurnUI();
     }
 
     // --- GAME LOGIC FUNCTIONS ---
-    function calculateHandScore(cardsString) {
-        let sum = 0;
-        let multiplier = 1;
-        if (cardsString.includes('*')) {
-            const parts = cardsString.split('*');
-            cardsString = parts[0];
-            const potentialMultiplier = parseInt(parts[1], 10);
-            if (!isNaN(potentialMultiplier)) multiplier = potentialMultiplier;
+ function calculateHandScore(cardsArray) {
+        if (!cardsArray || cardsArray.length === 0) {
+            return 0;
         }
-        const cards = cardsString.split('.').map(card => card.trim());
-        for (const card of cards) {
-            if (card === '') continue;
-            const numValue = parseInt(card, 10);
-            if (!isNaN(numValue) && numValue >= 0 && numValue <= 12) {
-                sum += numValue;
-            }
-        }
-        return sum * multiplier;
+        // Use reduce to sum up all the numbers in the array
+        return cardsArray.reduce((sum, value) => sum + value, 0);
     }
     
-    function processTurn() {
+ function processTurn() {
         if (gameOver) return;
-        const roundScore = calculateHandScore(cardsInput.value);
+
+        const roundScore = calculateHandScore(currentTurnCards);
         players[currentPlayerIndex].score += roundScore;
-        cardsInput.value = '';
+        
         turnsThisRound++;
         
         if (checkForWinner()) return; // Stop if winner is found
         
+        // --- Reset for next turn ---
+        currentTurnCards = [];
+        // Remove 'selected' class from all card buttons
+        document.querySelectorAll('.card-button.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+        currentHandTotal.textContent = '0'; // Reset display
+        // --- End Reset ---
+
         if (turnsThisRound >= players.length) {
             roundNumber++;
             turnsThisRound = 0;
@@ -207,5 +208,41 @@ document.addEventListener('DOMContentLoaded', () => {
         winnerAnnouncement.classList.remove('animate-winner'); // Reset animation
         gameContainer.classList.add('hidden');
         setupContainer.classList.remove('hidden');
+    }
+
+
+        function createCardButtons() {
+        cardSelectionContainer.innerHTML = ''; // Clear any existing cards
+        for (let i = 0; i <= 12; i++) {
+            const card = document.createElement('button');
+            card.className = 'card-button';
+            card.textContent = i;
+            card.dataset.value = i; // Store value in a data attribute
+            card.addEventListener('click', handleCardClick);
+            cardSelectionContainer.appendChild(card);
+        }
+    }
+
+    function handleCardClick(event) {
+        const cardButton = event.currentTarget;
+        const cardValue = parseInt(cardButton.dataset.value, 10);
+
+        // Toggle selection
+        if (currentTurnCards.includes(cardValue)) {
+            // Card is already selected, so un-select it
+            currentTurnCards = currentTurnCards.filter(value => value !== cardValue);
+            cardButton.classList.remove('selected');
+        } else {
+            // Card is not selected, so select it
+            currentTurnCards.push(cardValue);
+            cardButton.classList.add('selected');
+        }
+        
+        updateCurrentHandTotalDisplay();
+    }
+
+    function updateCurrentHandTotalDisplay() {
+        const total = calculateHandScore(currentTurnCards);
+        currentHandTotal.textContent = total;
     }
 });

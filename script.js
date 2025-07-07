@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.33"; // Updated version for debugging
+    const version = "v1.4"; // Updated version for debugging
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -39,13 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const bonusSound = document.getElementById('bonus-sound');
     const selectSound = document.getElementById('select-sound');
     const deselectSound = document.getElementById('deselect-sound');
+    const nextTurnSound = document.getElementById('next-turn-sound'); // New sound reference
 
     // --- INITIALIZATION ---
     versionInfo.textContent = version;
     initializeLeaderboard();
     
     // --- EVENT LISTENERS ---
-    // This is the "sound unlock" trick. It runs only ONCE.
     const audioUnlockOptions = { once: true };
     addPlayerBtn.addEventListener('click', initAudio, audioUnlockOptions);
     startGameBtn.addEventListener('click', initAudio, audioUnlockOptions);
@@ -62,8 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SOUND & SETUP FUNCTIONS ---
     function initAudio() {
-        // This function "unlocks" the browser's audio by playing a silent sound
-        // on the first user interaction.
         selectSound.volume = 0;
         selectSound.play().catch(() => {});
         selectSound.volume = 1;
@@ -75,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         soundElement.play().catch(error => console.error(`Sound failed: ${error}`));
     }
     
+    // ... (addPlayer, renderPlayerList, initializeLeaderboard, etc. are all the same) ...
     function addPlayer() {
         const name = playerNameInput.value.trim();
         if (name) {
@@ -166,22 +165,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isProcessingBonus) return;
         const cardButton = event.currentTarget;
         const cardValue = parseInt(cardButton.dataset.value, 10);
-
         const isSelected = cardButton.classList.toggle('selected');
         
         if (isSelected) {
             currentTurnCards.push(cardValue);
-            playSound(selectSound); // Play select sound
+            playSound(selectSound);
         } else {
             currentTurnCards = currentTurnCards.filter(value => value !== cardValue);
-            playSound(deselectSound); // Play deselect sound
+            playSound(deselectSound);
         }
 
         if (currentTurnCards.length === 7) {
             isProcessingBonus = true;
-            triggerCelebration(); // This now just plays sound/fireworks
+            triggerCelebration();
             updateCurrentHandTotalDisplay(); 
-            setTimeout(triggerSkip7Bonus, 1500); // The bonus logic runs after a delay
+            setTimeout(triggerSkip7Bonus, 1500);
         } else {
             updateCurrentHandTotalDisplay();
         }
@@ -218,7 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCurrentHandTotalDisplay();
     }
     
-    // --- HEAVILY REFACTORED: The single source of truth for advancing the game ---
     function processTurn(forcedScore = null, isSkip7Bonus = false) {
         if (gameOver) return;
         let roundScore;
@@ -232,7 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         players[currentPlayerIndex].score += roundScore;
         
-        // The Skip 7 Bonus ends the round for everyone
         if (isSkip7Bonus) {
             const turnsRemaining = players.length - turnsThisRound;
             turnsThisRound += turnsRemaining;
@@ -257,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetTurnState() {
-        isProcessingBonus = false; // This is now the SAFE place to unlock the UI
+        isProcessingBonus = false;
         currentTurnCards = [];
         currentMultiplier = 1;
         currentBonusPoints = 0;
@@ -271,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function triggerCelebration() {
         playSound(bonusSound);
-        
         const duration = 1 * 1000;
         const end = Date.now() + duration;
         (function frame() {
@@ -281,13 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }());
     }
 
-    // --- REWRITTEN & SIMPLIFIED: Fixes the hanging bug ---
     function triggerSkip7Bonus() {
         const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
         const finalScore = (baseScore * currentMultiplier) + currentBonusPoints + 15;
-        
-        // Delegate all game logic to the main processTurn function
-        processTurn(finalScore, true); // Pass the score and a flag indicating it's a bonus
+        processTurn(finalScore, true);
     }
 
     function updateCurrentHandTotalDisplay() {
@@ -310,12 +302,17 @@ document.addEventListener('DOMContentLoaded', () => {
         currentHandTotal.textContent = displayText;
     }
 
+    // --- UPDATED FUNCTION ---
     function updateTurnUI() {
-        // This must be called AFTER advancing the player
         if(gameOver) return;
         roundCounter.textContent = `Round: ${roundNumber}`;
         turnIndicator.textContent = `It's ${players[currentPlayerIndex].name}'s turn!`;
         renderScoreboard();
+        
+        // Play the sound for the next turn, but not on the very first turn of the game
+        if (roundNumber > 1 || turnsThisRound > 0) {
+            playSound(nextTurnSound);
+        }
     }
 
     function renderScoreboard() {
@@ -359,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
         players = [];
         gameOver = false;
         isProcessingBonus = false; 
-
         currentPlayerIndex = 0;
         roundStartPlayerIndex = 0;
         turnsThisRound = 0;

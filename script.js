@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.2"; // Updated version number
+    const version = "v1.3"; // Updated version for debugging
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -34,13 +34,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const winnerText = document.getElementById('winner-text');
     const newGameBtn = document.getElementById('new-game-btn');
     const winnersList = document.getElementById('winners-list');
+    
+    // Audio elements
     const bonusSound = document.getElementById('bonus-sound');
+    const selectSound = document.getElementById('select-sound');
+    const deselectSound = document.getElementById('deselect-sound');
 
     // --- INITIALIZATION ---
     versionInfo.textContent = version;
     initializeLeaderboard();
     
     // --- EVENT LISTENERS ---
+    // This is the "sound unlock" trick. It runs only ONCE.
+    const audioUnlockOptions = { once: true };
+    addPlayerBtn.addEventListener('click', initAudio, audioUnlockOptions);
+    startGameBtn.addEventListener('click', initAudio, audioUnlockOptions);
+
     addPlayerBtn.addEventListener('click', addPlayer);
     startGameBtn.addEventListener('click', startGame);
     newGameBtn.addEventListener('click', resetGame);
@@ -51,7 +60,21 @@ document.addEventListener('DOMContentLoaded', () => {
         processTurn();
     });
 
-    // --- SETUP & LEADERBOARD FUNCTIONS ---
+    // --- SOUND & SETUP FUNCTIONS ---
+    function initAudio() {
+        // This function "unlocks" the browser's audio by playing a silent sound
+        // on the first user interaction.
+        selectSound.volume = 0;
+        selectSound.play().catch(() => {});
+        selectSound.volume = 1;
+        console.log("Audio context unlocked.");
+    }
+    
+    function playSound(soundElement) {
+        soundElement.currentTime = 0;
+        soundElement.play().catch(error => console.error(`Sound failed: ${error}`));
+    }
+    
     function addPlayer() {
         const name = playerNameInput.value.trim();
         if (name) {
@@ -145,17 +168,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const cardValue = parseInt(cardButton.dataset.value, 10);
 
         const isSelected = cardButton.classList.toggle('selected');
+        
         if (isSelected) {
             currentTurnCards.push(cardValue);
+            playSound(selectSound); // Play select sound
         } else {
             currentTurnCards = currentTurnCards.filter(value => value !== cardValue);
+            playSound(deselectSound); // Play deselect sound
         }
 
         if (currentTurnCards.length === 7) {
             isProcessingBonus = true;
-            triggerCelebration();
+            triggerCelebration(); // This now just plays sound/fireworks
             updateCurrentHandTotalDisplay(); 
-            setTimeout(triggerSkip7Bonus, 1500);
+            setTimeout(triggerSkip7Bonus, 1500); // The bonus logic runs after a delay
         } else {
             updateCurrentHandTotalDisplay();
         }
@@ -176,6 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         cardButton.classList.toggle('selected');
+        if (cardButton.classList.contains('selected')) {
+            playSound(selectSound);
+        } else {
+            playSound(deselectSound);
+        }
+        
         if (action === 'multiply') {
             currentMultiplier = cardButton.classList.contains('selected') ? 2 : 1;
         }
@@ -186,9 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCurrentHandTotalDisplay();
     }
     
-    function processTurn(forcedScore = null) {
+    // --- HEAVILY REFACTORED: The single source of truth for advancing the game ---
+    function processTurn(forcedScore = null, isSkip7Bonus = false) {
         if (gameOver) return;
         let roundScore;
+
         if (forcedScore !== null) {
             roundScore = forcedScore;
         } else {
@@ -197,27 +231,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         players[currentPlayerIndex].score += roundScore;
-        turnsThisRound++;
+        
+        // The Skip 7 Bonus ends the round for everyone
+        if (isSkip7Bonus) {
+            const turnsRemaining = players.length - turnsThisRound;
+            turnsThisRound += turnsRemaining;
+        } else {
+            turnsThisRound++;
+        }
         
         if (checkForWinner()) return;
+
         advanceToNextPlayer();
         updateTurnUI();
     }
 
     function advanceToNextPlayer() {
-        resetTurnState();
         if (turnsThisRound >= players.length) {
             roundNumber++;
             turnsThisRound = 0;
             roundStartPlayerIndex = (roundStartPlayerIndex + 1) % players.length;
-            currentPlayerIndex = roundStartPlayerIndex;
-        } else {
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
         }
+        currentPlayerIndex = (roundStartPlayerIndex + turnsThisRound) % players.length;
+        resetTurnState();
     }
 
     function resetTurnState() {
-        isProcessingBonus = false;
+        isProcessingBonus = false; // This is now the SAFE place to unlock the UI
         currentTurnCards = [];
         currentMultiplier = 1;
         currentBonusPoints = 0;
@@ -230,14 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function triggerCelebration() {
-        const playPromise = bonusSound.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error("Audio playback failed.", error);
-            }).then(() => {
-                bonusSound.currentTime = 0;
-            });
-        }
+        playSound(bonusSound);
         
         const duration = 1 * 1000;
         const end = Date.now() + duration;
@@ -248,29 +281,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }());
     }
 
-    // --- REWRITTEN & FIXED ---
+    // --- REWRITTEN & SIMPLIFIED: Fixes the hanging bug ---
     function triggerSkip7Bonus() {
         const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
         const finalScore = (baseScore * currentMultiplier) + currentBonusPoints + 15;
-        players[currentPlayerIndex].score += finalScore;
-
-        // Check for a winner IMMEDIATELY after awarding score.
-        // If there's a winner, the game ends and we don't need to advance the turn.
-        // The checkForWinner function handles the UI change.
-        if (checkForWinner()) {
-            return;
-        }
-
-        // If no winner, the round ends. We must set up the NEXT round.
-        roundNumber++;
-        turnsThisRound = 0; // A new round starts with 0 turns taken.
-        roundStartPlayerIndex = (roundStartPlayerIndex + 1) % players.length;
-        currentPlayerIndex = roundStartPlayerIndex;
-
-        // NOW, reset the state for the new turn and update the UI.
-        // This is where isProcessingBonus is safely set back to false.
-        resetTurnState(); 
-        updateTurnUI();
+        
+        // Delegate all game logic to the main processTurn function
+        processTurn(finalScore, true); // Pass the score and a flag indicating it's a bonus
     }
 
     function updateCurrentHandTotalDisplay() {
@@ -294,6 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateTurnUI() {
+        // This must be called AFTER advancing the player
+        if(gameOver) return;
         roundCounter.textContent = `Round: ${roundNumber}`;
         turnIndicator.textContent = `It's ${players[currentPlayerIndex].name}'s turn!`;
         renderScoreboard();
@@ -301,21 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderScoreboard() {
         scoreboard.innerHTML = '';
-        let scores = players.map(p => p.score);
-        let maxScore = -Infinity, minScore = Infinity;
-        if (players.length > 1) {
-            maxScore = Math.max(...scores);
-            minScore = Math.min(...scores);
-        }
-
         players.forEach((player, index) => {
             const card = document.createElement('div');
             card.className = 'player-score-card';
             if (index === currentPlayerIndex && !gameOver) card.classList.add('active');
-            if (players.length > 1) {
-                if (player.score === maxScore && maxScore > 0) card.classList.add('leader');
-                if (player.score === minScore) card.classList.add('last-place');
-            }
+            
             const scoreNeeded = Math.max(0, winningScore + 1 - player.score);
             card.innerHTML = `
                 <div class="name">${player.name}</div>
@@ -347,15 +356,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function resetGame() {
-        // --- ADDED THIS LINE AS A FAILSAFE ---
+        players = [];
+        gameOver = false;
         isProcessingBonus = false; 
 
-        players = [];
         currentPlayerIndex = 0;
         roundStartPlayerIndex = 0;
         turnsThisRound = 0;
         roundNumber = 1;
-        gameOver = false;
+        resetTurnState();
         
         playerList.innerHTML = '';
         playerNameInput.value = '';

@@ -1,11 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.6"; // Updated version for debugging
-    const GITHUB_USER = 'chumio'; // Your GitHub Username
-    const GITHUB_REPO = 'Skip7';  // Your GitHub Repository Name
-    let initialCommitSHA = null;  // Stores the version the page loaded with
-
+    const version = "v1.7"; // Updated version to confirm the fix
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -18,10 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMultiplier = 1;
     let currentBonusPoints = 0;
     let isProcessingBonus = false;
+    let isAudioInitialized = false; // The new, simple flag for sound unlocking
 
     // --- ELEMENT REFERENCES ---
-    const updateNotification = document.getElementById('update-notification');
-    const updateRefreshBtn = document.getElementById('update-refresh-btn');
     const versionInfo = document.getElementById('version-info');
     const setupContainer = document.getElementById('setup-container');
     const playerNameInput = document.getElementById('player-name-input');
@@ -50,13 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INITIALIZATION ---
     versionInfo.textContent = version;
     initializeLeaderboard();
-    initUpdateChecker(); // Start checking for new versions
-
-    // --- EVENT LISTENERS ---
-    const audioUnlockOptions = { once: true };
-    addPlayerBtn.addEventListener('click', initAudio, audioUnlockOptions);
-    startGameBtn.addEventListener('click', initAudio, audioUnlockOptions);
-
+    
+    // --- EVENT LISTENERS (Restored to their simple, working form) ---
     addPlayerBtn.addEventListener('click', addPlayer);
     startGameBtn.addEventListener('click', startGame);
     newGameBtn.addEventListener('click', resetGame);
@@ -68,60 +58,25 @@ document.addEventListener('DOMContentLoaded', () => {
         processTurn();
     });
 
-    updateRefreshBtn.addEventListener('click', () => {
-        // Reloads the page from the server, ignoring the cache
-        window.location.reload(true);
-    });
-
-    // --- NEW: UPDATE CHECKER LOGIC ---
-    let updateInterval;
-    async function checkForUpdates() {
-        try {
-            const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/commits/main`);
-            if (!response.ok) {
-                console.error("Could not check for updates. API response not OK.");
-                return;
-            }
-            const data = await response.json();
-            const latestCommitSHA = data.sha;
-
-            if (initialCommitSHA === null) {
-                initialCommitSHA = latestCommitSHA;
-                console.log(`App initialized with version: ${initialCommitSHA.substring(0, 7)}`);
-                return;
-            }
-
-            if (initialCommitSHA !== latestCommitSHA) {
-                console.log("New version detected!");
-                updateNotification.classList.remove('hidden');
-                clearInterval(updateInterval); 
-            } else {
-                console.log("App is up to date.");
-            }
-        } catch (error) {
-            console.error("Error checking for updates:", error);
-        }
-    }
-
-    function initUpdateChecker() {
-        checkForUpdates();
-        updateInterval = setInterval(checkForUpdates, 60000); // 60000ms = 1 minute
-    }
-
     // --- SOUND & SETUP FUNCTIONS ---
     function initAudio() {
+        if (isAudioInitialized) return; // If already unlocked, do nothing
         selectSound.volume = 0;
         selectSound.play().catch(() => {});
         selectSound.volume = 1;
+        isAudioInitialized = true; // Set the flag so this never runs again
         console.log("Audio context unlocked.");
     }
     
     function playSound(soundElement) {
+        if (!isAudioInitialized) initAudio(); // Failsafe if user skips adding players
         soundElement.currentTime = 0;
         soundElement.play().catch(error => console.error(`Sound failed: ${error}`));
     }
     
+    // --- UPDATED to include the sound unlock ---
     function addPlayer() {
+        initAudio(); // Call the sound unlock function
         const name = playerNameInput.value.trim();
         if (name) {
             players.push({ name, score: 0 });
@@ -164,7 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('skipSevenWinners', JSON.stringify(allTimeWinners));
     }
 
+    // --- UPDATED to include the sound unlock ---
     function startGame() {
+        initAudio(); // Call the sound unlock function
         if (players.length < 1) {
             alert('Please add at least one player.');
             return;
@@ -176,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTurnUI();
     }
 
-    // --- GAME LOGIC FUNCTIONS ---
+    // --- GAME LOGIC FUNCTIONS (The rest of the file is the same) ---
     function createCardButtons() {
         cardSelectionContainer.innerHTML = '';
         for (let i = 0; i <= 12; i++) {
@@ -335,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let displayText = `${total}`;
 
         if (currentMultiplier > 1 || currentBonusPoints > 0) {
-            displayText = `(${baseScore} × ${currentMultiplier}) + ${currentBonusPoints} = ${total}`;
+            displayText = `(${baseScore} × ${currentMultiplier}) + ${total - currentBonusPoints}`;
         }
         
         if (currentTurnCards.length === 7) {

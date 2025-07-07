@@ -31,10 +31,15 @@
                 <strong>Rules:</strong> Cards 0-12. Use '.' to separate. Use '*' to multiply. First to 201 wins!
             </p>
 
-            <div class="input-group">
-                <input type="text" id="cards-input" placeholder="e.g., 5.10.12 or 5.10*2">
-                <button id="log-score-btn">Log Round Score</button>
+           <!-- New Interactive Card Selection -->
+            <div id="card-selection-area">
+                <p>Current Hand Value: <b id="current-hand-total">0</b></p>
+                <div id="card-selection-container">
+                    <!-- Cards will be dynamically generated here -->
+                </div>
+                <button id="log-score-btn" class="log-score-button">Log Round Score</button>
             </div>
+
 
             <h3>Scoreboard</h3>
             <div id="scoreboard"></div>

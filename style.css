@@ -147,3 +147,68 @@ button:hover { background-color: #0056b3; }
 #current-hand-total {
     font-size: 1.5em;
 }
+
+/* --- New Action Card Styles --- */
+#action-card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px; /* Space between number and action cards */
+    padding-top: 15px;
+    border-top: 2px dashed #e0e0e0;
+}
+
+.action-card {
+    background-color: #fff;
+    border: 2px solid #ffc107; /* Vibrant yellow/gold border */
+    color: #ffc107;
+    font-weight: bold;
+    font-size: 1.2em;
+    width: 70px; /* A bit wider for text/icons */
+    height: 65px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column; /* Stack icon and text */
+    justify-content: center;
+    align-items: center;
+    line-height: 1.1;
+}
+
+/* Style for the emoji/icon inside the action card */
+.action-card .icon {
+    font-size: 1.6em;
+}
+
+/* Style for the text label below the icon */
+.action-card .label {
+    font-size: 0.6em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 3px;
+}
+
+.action-card:hover {
+    background-color: #fff8e1; /* Light yellow on hover */
+}
+
+/* Selected state for action cards (only for *2 and +6) */
+.action-card.selected {
+    background-color: #ffc107;
+    color: #343a40;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
+}
+
+#current-hand-total {
+    font-size: 1.5em;
+    transition: color 0.3s ease;
+}
+
+/* Special style for Skip 7 bonus announcement */
+#current-hand-total.skip7-bonus {
+    color: #28a745;
+    transform: scale(1.1);
+}

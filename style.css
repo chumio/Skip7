@@ -95,3 +95,55 @@ button:hover { background-color: #0056b3; }
     font-size: 1.1em;
     font-weight: 500;
 }
+
+
+
+/* --- New Card Selection Styles --- */
+#card-selection-area {
+    margin-top: 20px;
+}
+
+#card-selection-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.card-button {
+    background-color: #fff;
+    border: 2px solid #007bff;
+    color: #007bff;
+    font-weight: bold;
+    font-size: 1.2em;
+    width: 45px;
+    height: 60px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-button:hover {
+    background-color: #e9ecef;
+}
+
+/* This is the style for a selected card (bigger and different color) */
+.card-button.selected {
+    background-color: #007bff;
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    border-color: #0056b3;
+}
+
+.log-score-button {
+    width: 100%;
+}
+
+#current-hand-total {
+    font-size: 1.5em;
+}

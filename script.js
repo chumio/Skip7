@@ -322,35 +322,36 @@ function createActionCards() {
         actionCardContainer.appendChild(card);
     });
 }
-
 function handleActionCardClick(event) {
     const cardButton = event.currentTarget;
     const action = cardButton.dataset.action;
 
-    switch (action) {
-        case 'freeze':
-            // Immediately ends the current player's turn and logs their score
-            processTurn();
-            break;
-        case 'multiply':
-            // Toggles the multiplier
-            cardButton.classList.toggle('selected');
-            currentMultiplier = (currentMultiplier === 1) ? 2 : 1;
-            break;
-        case 'add':
-            // Toggles the bonus points
-            cardButton.classList.toggle('selected');
-            currentBonusPoints = (currentBonusPoints === 0) ? 6 : 0;
-            break;
-        case 'zero':
-            // Immediately ends turn with a score of 0
-            processTurn(0); // Pass a forcedScore of 0
-            break;
+    // --- Actions that IMMEDIATELY end the turn ---
+    if (action === 'freeze') {
+        // 'Freeze' is like pressing "Log Round Score"
+        processTurn(); 
+        return; // Stop the function here
     }
-    // Update the display unless it was a turn-ending action
-    if (action !== 'freeze' && action !== 'zero') {
-        updateCurrentHandTotalDisplay();
+
+    if (action === 'zero') {
+        // 'No Score' ends the turn with a forced score of 0
+        processTurn(0);
+        return; // Stop the function here
     }
+
+    // --- Actions that MODIFY the score (these are toggles) ---
+    if (action === 'multiply') {
+        cardButton.classList.toggle('selected');
+        currentMultiplier = cardButton.classList.contains('selected') ? 2 : 1;
+    }
+
+    if (action === 'add') {
+        cardButton.classList.toggle('selected');
+        currentBonusPoints = cardButton.classList.contains('selected') ? 6 : 0;
+    }
+    
+    // Update the score display for modifier cards
+    updateCurrentHandTotalDisplay();
 }
 
 function triggerSkip7Bonus() {

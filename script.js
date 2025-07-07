@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
+    const version = "v1.1"; // Version number
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -12,15 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTurnCards = [];
     let currentMultiplier = 1;
     let currentBonusPoints = 0;
-    let isProcessingBonus = false; // Flag to prevent clicks during bonus celebration
+    let isProcessingBonus = false;
 
     // --- ELEMENT REFERENCES ---
+    const versionInfo = document.getElementById('version-info');
     const setupContainer = document.getElementById('setup-container');
     const playerNameInput = document.getElementById('player-name-input');
     const addPlayerBtn = document.getElementById('add-player-btn');
     const playerList = document.getElementById('player-list');
     const startGameBtn = document.getElementById('start-game-btn');
-
     const gameContainer = document.getElementById('game-container');
     const turnIndicator = document.getElementById('turn-indicator');
     const roundCounter = document.getElementById('round-counter');
@@ -29,15 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentHandTotal = document.getElementById('current-hand-total');
     const logScoreBtn = document.getElementById('log-score-btn');
     const scoreboard = document.getElementById('scoreboard');
-
     const winnerAnnouncement = document.getElementById('winner-announcement');
     const winnerText = document.getElementById('winner-text');
     const newGameBtn = document.getElementById('new-game-btn');
-    
     const winnersList = document.getElementById('winners-list');
     const bonusSound = document.getElementById('bonus-sound');
 
     // --- INITIALIZATION ---
+    versionInfo.textContent = version; // Set version number on screen
     initializeLeaderboard();
     
     // --- EVENT LISTENERS ---
@@ -47,13 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
     playerNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') addPlayer(); });
     
     logScoreBtn.addEventListener('click', () => {
-        // Prevent action if a bonus is being processed
         if (isProcessingBonus) return;
-        // Call processTurn without arguments to use the calculated score
         processTurn();
     });
 
-    // --- SETUP & LEADERBOARD FUNCTIONS ---
+    // --- SETUP & LEADERBOARD FUNCTIONS (No Changes Here) ---
     function addPlayer() {
         const name = playerNameInput.value.trim();
         if (name) {
@@ -142,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleCardClick(event) {
-        if (isProcessingBonus) return; // Lock UI during celebration
+        if (isProcessingBonus) return;
         const cardButton = event.currentTarget;
         const cardValue = parseInt(cardButton.dataset.value, 10);
 
@@ -154,17 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (currentTurnCards.length === 7) {
-            isProcessingBonus = true; // Lock the UI
+            isProcessingBonus = true;
             triggerCelebration();
             updateCurrentHandTotalDisplay(); 
-            setTimeout(triggerSkip7Bonus, 1500); // Wait for celebration to finish
+            setTimeout(triggerSkip7Bonus, 1500);
         } else {
             updateCurrentHandTotalDisplay();
         }
     }
 
     function handleActionCardClick(event) {
-        if (isProcessingBonus) return; // Lock UI during celebration
+        if (isProcessingBonus) return;
         const cardButton = event.currentTarget;
         const action = cardButton.dataset.action;
 
@@ -190,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function processTurn(forcedScore = null) {
         if (gameOver) return;
-
         let roundScore;
         if (forcedScore !== null) {
             roundScore = forcedScore;
@@ -203,14 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
         turnsThisRound++;
         
         if (checkForWinner()) return;
-
         advanceToNextPlayer();
         updateTurnUI();
     }
 
     function advanceToNextPlayer() {
         resetTurnState();
-
         if (turnsThisRound >= players.length) {
             roundNumber++;
             turnsThisRound = 0;
@@ -222,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetTurnState() {
-        isProcessingBonus = false; // Unlock UI for the next turn
+        isProcessingBonus = false;
         currentTurnCards = [];
         currentMultiplier = 1;
         currentBonusPoints = 0;
@@ -234,19 +229,22 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCurrentHandTotalDisplay();
     }
 
+    // --- NEW: More robust celebration function ---
     function triggerCelebration() {
+        // Sound is triggered first, directly from user click context
         const playPromise = bonusSound.play();
         if (playPromise !== undefined) {
-            playPromise.then(() => {
+            playPromise.catch(error => {
+                console.error("Audio playback failed. User may need to interact with the page first or check system mute.", error);
+            }).then(() => {
+                // Once playing, ensure it starts from the beginning on subsequent plays
                 bonusSound.currentTime = 0;
-            }).catch(error => {
-                console.error("Audio playback failed: ", error);
             });
         }
-
+        
+        // Launch fireworks
         const duration = 1 * 1000;
         const end = Date.now() + duration;
-
         (function frame() {
             confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
             confetti({ particleCount: 7, angle: 120, spread: 55, origin: { x: 1 } });
@@ -259,12 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalScore = (baseScore * currentMultiplier) + currentBonusPoints + 15;
         
         players[currentPlayerIndex].score += finalScore;
-
         const turnsRemainingInRound = players.length - turnsThisRound - 1;
         turnsThisRound += turnsRemainingInRound;
 
         if (checkForWinner()) return;
-        
         advanceToNextPlayer();
         updateTurnUI();
     }
@@ -322,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- END GAME FUNCTIONS ---
+    // --- END GAME FUNCTIONS (No Changes Here) ---
     function checkForWinner() {
         const winner = players.find(p => p.score > winningScore);
         if (winner) {

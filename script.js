@@ -10,10 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const winningScore = 200;
     let gameOver = false;
     let currentTurnCards = [];
-    let currentMultiplier = 1;   
-    let currentBonusPoints = 0;   
+    let currentMultiplier = 1;
+    let currentBonusPoints = 0;
+    let isProcessingBonus = false; // Flag to prevent clicks during bonus celebration
 
-    // --- ELEMENT REFERENCES ---ƒ
+    // --- ELEMENT REFERENCES ---
     const setupContainer = document.getElementById('setup-container');
     const playerNameInput = document.getElementById('player-name-input');
     const addPlayerBtn = document.getElementById('add-player-btn');
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const winnerAnnouncement = document.getElementById('winner-announcement');
     const winnerText = document.getElementById('winner-text');
     const newGameBtn = document.getElementById('new-game-btn');
+    
     const winnersList = document.getElementById('winners-list');
     const bonusSound = document.getElementById('bonus-sound');
 
@@ -41,10 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- EVENT LISTENERS ---
     addPlayerBtn.addEventListener('click', addPlayer);
     startGameBtn.addEventListener('click', startGame);
-    logScoreBtn.addEventListener('click', () => processTurn());
     newGameBtn.addEventListener('click', resetGame);
     playerNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') addPlayer(); });
     
+    logScoreBtn.addEventListener('click', () => {
+        // Prevent action if a bonus is being processed
+        if (isProcessingBonus) return;
+        // Call processTurn without arguments to use the calculated score
+        processTurn();
+    });
 
     // --- SETUP & LEADERBOARD FUNCTIONS ---
     function addPlayer() {
@@ -64,8 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             playerList.appendChild(li);
         });
     }
-
-    // Tweak 4: Functions for the persistent leaderboard
+    
     function initializeLeaderboard() {
         const storedWinners = localStorage.getItem('skipSevenWinners');
         if (storedWinners) {
@@ -104,73 +110,190 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- GAME LOGIC FUNCTIONS ---
+    function createCardButtons() {
+        cardSelectionContainer.innerHTML = '';
+        for (let i = 0; i <= 12; i++) {
+            const card = document.createElement('button');
+            card.className = 'card-button';
+            card.textContent = i;
+            card.dataset.value = i;
+            card.addEventListener('click', handleCardClick);
+            cardSelectionContainer.appendChild(card);
+        }
+    }
+
+    function createActionCards() {
+        actionCardContainer.innerHTML = '';
+        const actions = [
+            { id: 'freeze', icon: '❄️', label: 'FREEZE' },
+            { id: 'multiply', icon: '×2', label: 'MULTIPLY' },
+            { id: 'add', icon: '+6', label: 'BONUS' },
+            { id: 'zero', icon: '❌', label: 'NO SCORE' }
+        ];
+
+        actions.forEach(action => {
+            const card = document.createElement('button');
+            card.className = 'action-card';
+            card.dataset.action = action.id;
+            card.innerHTML = `<div class="icon">${action.icon}</div><div class="label">${action.label}</div>`;
+            card.addEventListener('click', handleActionCardClick);
+            actionCardContainer.appendChild(card);
+        });
+    }
+
+    function handleCardClick(event) {
+        if (isProcessingBonus) return; // Lock UI during celebration
+        const cardButton = event.currentTarget;
+        const cardValue = parseInt(cardButton.dataset.value, 10);
+
+        const isSelected = cardButton.classList.toggle('selected');
+        if (isSelected) {
+            currentTurnCards.push(cardValue);
+        } else {
+            currentTurnCards = currentTurnCards.filter(value => value !== cardValue);
+        }
+
+        if (currentTurnCards.length === 7) {
+            isProcessingBonus = true; // Lock the UI
+            triggerCelebration();
+            updateCurrentHandTotalDisplay(); 
+            setTimeout(triggerSkip7Bonus, 1500); // Wait for celebration to finish
+        } else {
+            updateCurrentHandTotalDisplay();
+        }
+    }
+
+    function handleActionCardClick(event) {
+        if (isProcessingBonus) return; // Lock UI during celebration
+        const cardButton = event.currentTarget;
+        const action = cardButton.dataset.action;
+
+        if (action === 'freeze') {
+            processTurn();
+            return;
+        }
+        if (action === 'zero') {
+            processTurn(0);
+            return;
+        }
+        
+        cardButton.classList.toggle('selected');
+        if (action === 'multiply') {
+            currentMultiplier = cardButton.classList.contains('selected') ? 2 : 1;
+        }
+        if (action === 'add') {
+            currentBonusPoints = cardButton.classList.contains('selected') ? 6 : 0;
+        }
+        
+        updateCurrentHandTotalDisplay();
+    }
+    
+    function processTurn(forcedScore = null) {
+        if (gameOver) return;
+
+        let roundScore;
+        if (forcedScore !== null) {
+            roundScore = forcedScore;
+        } else {
+            const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
+            roundScore = (baseScore * currentMultiplier) + currentBonusPoints;
+        }
+        
+        players[currentPlayerIndex].score += roundScore;
+        turnsThisRound++;
+        
+        if (checkForWinner()) return;
+
+        advanceToNextPlayer();
+        updateTurnUI();
+    }
+
+    function advanceToNextPlayer() {
+        resetTurnState();
+
+        if (turnsThisRound >= players.length) {
+            roundNumber++;
+            turnsThisRound = 0;
+            roundStartPlayerIndex = (roundStartPlayerIndex + 1) % players.length;
+            currentPlayerIndex = roundStartPlayerIndex;
+        } else {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        }
+    }
+
+    function resetTurnState() {
+        isProcessingBonus = false; // Unlock UI for the next turn
+        currentTurnCards = [];
+        currentMultiplier = 1;
+        currentBonusPoints = 0;
+        
+        document.querySelectorAll('.card-button.selected, .action-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        updateCurrentHandTotalDisplay();
+    }
+
     function triggerCelebration() {
-    // Play the sound with error handling
-    const playPromise = bonusSound.play();
-    if (playPromise !== undefined) {
-        playPromise.then(_ => {
-            // Automatic playback started!
-            bonusSound.currentTime = 0; // Rewind to start
-        }).catch(error => {
-            // Autoplay was prevented.
-            console.error("Audio playback error: ", error);
-        });
+        const playPromise = bonusSound.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                bonusSound.currentTime = 0;
+            }).catch(error => {
+                console.error("Audio playback failed: ", error);
+            });
+        }
+
+        const duration = 1 * 1000;
+        const end = Date.now() + duration;
+
+        (function frame() {
+            confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
+            confetti({ particleCount: 7, angle: 120, spread: 55, origin: { x: 1 } });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        }());
     }
 
-    // Launch the fireworks!
-    const duration = 1 * 1000;
-    const end = Date.now() + duration;
-
-    (function frame() {
-        confetti({
-            particleCount: 7,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 }
-        });
-        confetti({
-            particleCount: 7,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 }
-        });
-
-        if (Date.now() < end) {
-            requestAnimationFrame(frame);
-        }
-    }());
-}
-    
- function calculateHandScore(cardsArray) {
-        if (!cardsArray || cardsArray.length === 0) {
-            return 0;
-        }
-        // Use reduce to sum up all the numbers in the array
-        return cardsArray.reduce((sum, value) => sum + value, 0);
-    }
-    
-function processTurn(forcedScore = null) {
-    if (gameOver) return;
-
-    let roundScore;
-    if (forcedScore !== null) {
-        // Used for the "No Score" card
-        roundScore = forcedScore;
-    } else {
-        // Normal score calculation
+    function triggerSkip7Bonus() {
         const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
-        roundScore = (baseScore * currentMultiplier) + currentBonusPoints;
-    }
-    
-    players[currentPlayerIndex].score += roundScore;
-    turnsThisRound++;
-    
-    if (checkForWinner()) return;
+        const finalScore = (baseScore * currentMultiplier) + currentBonusPoints + 15;
+        
+        players[currentPlayerIndex].score += finalScore;
 
-    // Advance to the next player
-    advanceToNextPlayer();
-    updateTurnUI();
-}
+        const turnsRemainingInRound = players.length - turnsThisRound - 1;
+        turnsThisRound += turnsRemainingInRound;
+
+        if (checkForWinner()) return;
+        
+        advanceToNextPlayer();
+        updateTurnUI();
+    }
+
+    function updateCurrentHandTotalDisplay() {
+        const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
+        let total = (baseScore * currentMultiplier) + currentBonusPoints;
+        let displayText = `${total}`;
+
+        if (currentMultiplier > 1 || currentBonusPoints > 0) {
+            displayText = `(${baseScore} × ${currentMultiplier}) + ${currentBonusPoints} = ${total}`;
+        }
+        
+        if (currentTurnCards.length === 7) {
+            total += 15;
+            displayText = `SKIP 7 BONUS! ${total - 15} + 15 = ${total}`;
+            currentHandTotal.classList.add('skip7-bonus');
+        } else {
+            currentHandTotal.classList.remove('skip7-bonus');
+        }
+        
+        currentHandTotal.textContent = displayText;
+    }
+
+    function updateTurnUI() {
+        roundCounter.textContent = `Round: ${roundNumber}`;
+        turnIndicator.textContent = `It's ${players[currentPlayerIndex].name}'s turn!`;
+        renderScoreboard();
+    }
 
     function renderScoreboard() {
         scoreboard.innerHTML = '';
@@ -189,8 +312,7 @@ function processTurn(forcedScore = null) {
                 if (player.score === maxScore && maxScore > 0) card.classList.add('leader');
                 if (player.score === minScore) card.classList.add('last-place');
             }
-            // Tweak 3: Show score needed to win
-            const scoreNeeded = Math.max(0, winningScore - player.score);
+            const scoreNeeded = Math.max(0, winningScore + 1 - player.score);
             card.innerHTML = `
                 <div class="name">${player.name}</div>
                 <div class="score">${player.score}</div>
@@ -200,18 +322,11 @@ function processTurn(forcedScore = null) {
         });
     }
 
-    function updateTurnUI() {
-        roundCounter.textContent = `Round: ${roundNumber}`;
-        turnIndicator.textContent = `It's ${players[currentPlayerIndex].name}'s turn!`;
-        renderScoreboard();
-    }
-
     // --- END GAME FUNCTIONS ---
     function checkForWinner() {
-        const winner = players.find(p => p.score >= winningScore);
+        const winner = players.find(p => p.score > winningScore);
         if (winner) {
             gameOver = true;
-            // Tweak 5: Add winner to leaderboard and animate
             winnerText.textContent = `🎉 ${winner.name} is the winner! 🎉`;
             allTimeWinners.push(winner.name);
             saveWinnersToStorage();
@@ -219,9 +334,9 @@ function processTurn(forcedScore = null) {
             
             gameContainer.classList.add('hidden');
             winnerAnnouncement.classList.remove('hidden');
-            winnerAnnouncement.classList.add('animate-winner'); // Trigger animation
+            winnerAnnouncement.classList.add('animate-winner');
             
-            renderScoreboard(); // Final render to remove active state
+            renderScoreboard();
             return true;
         }
         return false;
@@ -239,179 +354,8 @@ function processTurn(forcedScore = null) {
         playerNameInput.value = '';
         
         winnerAnnouncement.classList.add('hidden');
-        winnerAnnouncement.classList.remove('animate-winner'); // Reset animation
+        winnerAnnouncement.classList.remove('animate-winner');
         gameContainer.classList.add('hidden');
         setupContainer.classList.remove('hidden');
     }
-
-
-        function createCardButtons() {
-        cardSelectionContainer.innerHTML = ''; // Clear any existing cards
-        for (let i = 0; i <= 12; i++) {
-            const card = document.createElement('button');
-            card.className = 'card-button';
-            card.textContent = i;
-            card.dataset.value = i; // Store value in a data attribute
-            card.addEventListener('click', handleCardClick);
-            cardSelectionContainer.appendChild(card);
-        }
-    }
-
-function handleCardClick(event) {
-    const cardButton = event.currentTarget;
-    const cardValue = parseInt(cardButton.dataset.value, 10);
-
-    const isSelected = cardButton.classList.toggle('selected');
-
-    if (isSelected) {
-        currentTurnCards.push(cardValue);
-    } else {
-        currentTurnCards = currentTurnCards.filter(value => value !== cardValue);
-    }
-
-    // --- The new "Skip 7" bonus logic with celebration ---
-    if (currentTurnCards.length === 7) {
-        triggerCelebration(); // <-- TRIGGER THE EFFECTS!
-        updateCurrentHandTotalDisplay(); 
-        setTimeout(triggerSkip7Bonus, 1500); // Increased timeout to enjoy the show
-    } else {
-        updateCurrentHandTotalDisplay();
-    }
-}
-
-    function updateCurrentHandTotalDisplay() {
-    const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
-    let total = (baseScore * currentMultiplier) + currentBonusPoints;
-    let displayText = `${total}`;
-
-    // Show the calculation details to the user for clarity
-    if (currentMultiplier > 1 || currentBonusPoints > 0) {
-        displayText = `(${baseScore} × ${currentMultiplier}) + ${currentBonusPoints} = ${total}`;
-    }
-
-    // Special check for Skip 7 bonus
-    if (currentTurnCards.length === 7) {
-        total += 15;
-        displayText = `SKIP 7 BONUS! ${total - 15} + 15 = ${total}`;
-        currentHandTotal.classList.add('skip7-bonus');
-    } else {
-        currentHandTotal.classList.remove('skip7-bonus');
-    }
-    
-    currentHandTotal.textContent = displayText;
-}
-
-
-// --- NEW LOGIC FUNCTIONS ---
-
-function createActionCards() {
-    actionCardContainer.innerHTML = '';
-    const actions = [
-        { id: 'freeze', icon: '❄️', label: 'FREEZE' },
-        { id: 'multiply', icon: '×2', label: 'MULTIPLY' },
-        { id: 'add', icon: '+6', label: 'BONUS' },
-        { id: 'zero', icon: '❌', label: 'NO SCORE' }
-    ];
-
-    actions.forEach(action => {
-        const card = document.createElement('button');
-        card.className = 'action-card';
-        card.dataset.action = action.id;
-        card.innerHTML = `<div class="icon">${action.icon}</div><div class="label">${action.label}</div>`;
-        card.addEventListener('click', handleActionCardClick);
-        actionCardContainer.appendChild(card);
-    });
-}
-function handleActionCardClick(event) {
-    const cardButton = event.currentTarget;
-    const action = cardButton.dataset.action;
-
-    // --- Actions that IMMEDIATELY end the turn ---
-    if (action === 'freeze') {
-        // 'Freeze' is like pressing "Log Round Score"
-        processTurn(); 
-        return; // Stop the function here
-    }
-
-    if (action === 'zero') {
-        // 'No Score' ends the turn with a forced score of 0
-        processTurn(0);
-        return; // Stop the function here
-    }
-
-    // --- Actions that MODIFY the score (these are toggles) ---
-    if (action === 'multiply') {
-        cardButton.classList.toggle('selected');
-        currentMultiplier = cardButton.classList.contains('selected') ? 2 : 1;
-    }
-
-    if (action === 'add') {
-        cardButton.classList.toggle('selected');
-        currentBonusPoints = cardButton.classList.contains('selected') ? 6 : 0;
-    }
-    
-    // Update the score display for modifier cards
-    updateCurrentHandTotalDisplay();
-}
-
-function triggerSkip7Bonus() {
-    // Calculate the final score with the 15-point bonus
-    const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
-    const finalScore = (baseScore * currentMultiplier) + currentBonusPoints + 15;
-    
-    // Award score to the current player
-    players[currentPlayerIndex].score += finalScore;
-
-    // IMPORTANT: The round ends for everyone. Others in the round score 0.
-    // We can simulate this by fast-forwarding turns until a new round starts.
-    const turnsRemainingInRound = players.length - turnsThisRound - 1;
-    turnsThisRound += turnsRemainingInRound;
-
-    if (checkForWinner()) return;
-    
-    // Advance to the next ROUND
-    advanceToNextPlayer();
-    updateTurnUI();
-}
-
-function advanceToNextPlayer() {
-    resetTurnState(); // Reset cards and modifiers for the next player
-
-    if (turnsThisRound >= players.length) {
-        // Start a new round
-        roundNumber++;
-        turnsThisRound = 0;
-        roundStartPlayerIndex = (roundStartPlayerIndex + 1) % players.length;
-        currentPlayerIndex = roundStartPlayerIndex;
-    } else {
-        // Go to the next player in the current round
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    }
-}
-
-function resetTurnState() {
-    // Reset all temporary turn variables
-    currentTurnCards = [];
-    currentMultiplier = 1;
-    currentBonusPoints = 0;
-    
-    // Clear visual selection from all cards
-    document.querySelectorAll('.card-button.selected, .action-card.selected').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    updateCurrentHandTotalDisplay(); // Reset display to 0
-}
-
-// We need to slightly modify updateTurnUI to call resetTurnState
-// This ensures that when a new game starts, the state is clean.
-function updateTurnUI() {
-    // If it's the very first turn of the game, reset everything.
-    if (roundNumber === 1 && turnsThisRound === 0) {
-        resetTurnState();
-    }
-    roundCounter.textContent = `Round: ${roundNumber}`;
-    turnIndicator.textContent = `It's ${players[currentPlayerIndex].name}'s turn!`;
-    renderScoreboard();
-}    
 });

@@ -1,7 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.5"; // Updated version for debugging
+    const version = "v1.6"; // Updated version for debugging
+    const GITHUB_USER = 'chumio'; // Your GitHub Username
+    const GITHUB_REPO = 'Skip7';  // Your GitHub Repository Name
+    let initialCommitSHA = null;  // Stores the version the page loaded with
+
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -16,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isProcessingBonus = false;
 
     // --- ELEMENT REFERENCES ---
+    const updateNotification = document.getElementById('update-notification');
+    const updateRefreshBtn = document.getElementById('update-refresh-btn');
     const versionInfo = document.getElementById('version-info');
     const setupContainer = document.getElementById('setup-container');
     const playerNameInput = document.getElementById('player-name-input');
@@ -44,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INITIALIZATION ---
     versionInfo.textContent = version;
     initializeLeaderboard();
-    
+    initUpdateChecker(); // Start checking for new versions
+
     // --- EVENT LISTENERS ---
     const audioUnlockOptions = { once: true };
     addPlayerBtn.addEventListener('click', initAudio, audioUnlockOptions);
@@ -55,12 +62,51 @@ document.addEventListener('DOMContentLoaded', () => {
     newGameBtn.addEventListener('click', resetGame);
     playerNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') addPlayer(); });
     
-    // --- UPDATED EVENT LISTENER ---
     logScoreBtn.addEventListener('click', () => {
         if (isProcessingBonus) return;
-        playSound(selectSound); // Play the confirmation sound
+        playSound(selectSound);
         processTurn();
     });
+
+    updateRefreshBtn.addEventListener('click', () => {
+        // Reloads the page from the server, ignoring the cache
+        window.location.reload(true);
+    });
+
+    // --- NEW: UPDATE CHECKER LOGIC ---
+    let updateInterval;
+    async function checkForUpdates() {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/commits/main`);
+            if (!response.ok) {
+                console.error("Could not check for updates. API response not OK.");
+                return;
+            }
+            const data = await response.json();
+            const latestCommitSHA = data.sha;
+
+            if (initialCommitSHA === null) {
+                initialCommitSHA = latestCommitSHA;
+                console.log(`App initialized with version: ${initialCommitSHA.substring(0, 7)}`);
+                return;
+            }
+
+            if (initialCommitSHA !== latestCommitSHA) {
+                console.log("New version detected!");
+                updateNotification.classList.remove('hidden');
+                clearInterval(updateInterval); 
+            } else {
+                console.log("App is up to date.");
+            }
+        } catch (error) {
+            console.error("Error checking for updates:", error);
+        }
+    }
+
+    function initUpdateChecker() {
+        checkForUpdates();
+        updateInterval = setInterval(checkForUpdates, 60000); // 60000ms = 1 minute
+    }
 
     // --- SOUND & SETUP FUNCTIONS ---
     function initAudio() {

@@ -11,6 +11,7 @@ body {
     padding: 20px;
     box-sizing: border-box;
 }
+
 .container {
     background-color: #ffffff;
     padding: 20px 30px 30px;
@@ -20,6 +21,7 @@ body {
     max-width: 500px;
     width: 100%;
 }
+
 h1, h2, h3 { color: #1c1e21; }
 h2 { margin-top: 25px; margin-bottom: 5px; }
 h3 { margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
@@ -192,81 +194,6 @@ button:hover { background-color: #0056b3; }
     box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkipSeven Game</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- For the fireworks effect -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-</head>
-<body>
-
-    <div class="container">
-        <h1>SkipSeven</h1>
-        
-        <!-- Player Setup Section -->
-        <div id="setup-container">
-            <h2>Register Players</h2>
-            <div class="input-group">
-                <input type="text" id="player-name-input" placeholder="Enter player's first name">
-                <button id="add-player-btn">Add Player</button>
-            </div>
-            <ul id="player-list"></ul>
-            <button id="start-game-btn" class="start-button">Start Game</button>
-        </div>
-
-        <!-- Main Game Section (Initially Hidden) -->
-        <div id="game-container" class="hidden">
-            <h2 id="turn-indicator"></h2>
-            <p id="round-counter"></p>
-            
-            <p class="rules">
-                <strong>Rules:</strong> Select up to 7 cards. First to 201 wins!
-            </p>
-
-            <!-- Interactive Card Selection Area -->
-            <div id="card-selection-area">
-                <p>Current Hand Value: <b id="current-hand-total">0</b></p>
-                <div id="card-selection-container">
-                    <!-- Number cards will be generated here -->
-                </div>
-                <div id="action-card-container">
-                    <!-- Action cards will be generated here -->
-                </div>
-                <button id="log-score-btn" class="log-score-button">Log Round Score</button>
-            </div>
-
-            <h3>Scoreboard</h3>
-            <div id="scoreboard"></div>
-        </div>
-
-        <!-- Winner Announcement Section (Initially Hidden) -->
-        <div id="winner-announcement" class="hidden">
-            <h2 id="winner-text"></h2>
-            <button id="new-game-btn">Play New Game</button>
-        </div>
-
-        <!-- All-Time Winners Leaderboard -->
-        <div id="all-time-leaderboard">
-            <h3>🏆 All-Time Winners 🏆</h3>
-            <ul id="winners-list">
-                <!-- Winners will be loaded here from browser storage -->
-            </ul>
-        </div>
-
-        <!-- Version Number Display -->
-        <p id="version-info"></p>
-
-    </div>
-
-    <!-- For the bonus sound effect -->
-    <audio id="bonus-sound" src="bonus-chime.mp3" preload="auto"></audio>
-    <script src="script.js"></script>
-</body>
-</html>
 /* --- Update Notification Bar Style --- */
 #update-notification {
     position: fixed; /* Stays at the top even when you scroll */
@@ -298,4 +225,13 @@ button:hover { background-color: #0056b3; }
     border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
+}
+
+/* --- Version Info Style --- */
+#version-info {
+    font-size: 0.75em;
+    color: #aaa;
+    margin-top: 20px;
+    margin-bottom: -10px; /* Pull it a little closer to the bottom */
+    text-align: right;
 }

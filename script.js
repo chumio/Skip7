@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.4"; // Updated version for debugging
+    const version = "v1.5"; // Updated version for debugging
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bonusSound = document.getElementById('bonus-sound');
     const selectSound = document.getElementById('select-sound');
     const deselectSound = document.getElementById('deselect-sound');
-    const nextTurnSound = document.getElementById('next-turn-sound'); // New sound reference
+    const nextTurnSound = document.getElementById('next-turn-sound');
 
     // --- INITIALIZATION ---
     versionInfo.textContent = version;
@@ -55,8 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
     newGameBtn.addEventListener('click', resetGame);
     playerNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') addPlayer(); });
     
+    // --- UPDATED EVENT LISTENER ---
     logScoreBtn.addEventListener('click', () => {
         if (isProcessingBonus) return;
+        playSound(selectSound); // Play the confirmation sound
         processTurn();
     });
 
@@ -73,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         soundElement.play().catch(error => console.error(`Sound failed: ${error}`));
     }
     
-    // ... (addPlayer, renderPlayerList, initializeLeaderboard, etc. are all the same) ...
     function addPlayer() {
         const name = playerNameInput.value.trim();
         if (name) {
@@ -302,14 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
         currentHandTotal.textContent = displayText;
     }
 
-    // --- UPDATED FUNCTION ---
     function updateTurnUI() {
         if(gameOver) return;
         roundCounter.textContent = `Round: ${roundNumber}`;
         turnIndicator.textContent = `It's ${players[currentPlayerIndex].name}'s turn!`;
         renderScoreboard();
         
-        // Play the sound for the next turn, but not on the very first turn of the game
         if (roundNumber > 1 || turnsThisRound > 0) {
             playSound(nextTurnSound);
         }

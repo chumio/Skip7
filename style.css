@@ -42,21 +42,20 @@ button:hover { background-color: #0056b3; }
     border: 3px solid #dee2e6;
     border-radius: 8px;
     padding: 15px;
-    transition: all 0.3s ease-in-out; /* Smooth transition for scaling */
+    transition: all 0.3s ease-in-out;
 }
-/* Tweak 2: Make active player's tile bigger */
 .player-score-card.active {
     transform: scale(1.08);
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+    border-color: #007bff;
 }
 .player-score-card .name { font-weight: bold; font-size: 1.2em; color: #495057; }
 .player-score-card .score { font-size: 2em; font-weight: 700; transition: color 0.3s; }
 .player-score-card .score-needed { font-size: 0.8em; color: #6c757d; margin: 5px 0 0; text-align: right; }
-/* Tweak 1: Color only the score number */
 .leader .score { color: #28a745; /* Green */ }
 .last-place .score { color: #dc3545; /* Red */ }
 
-/* Tweak 5: Winner Animation */
+/* Winner Animation */
 @keyframes celebrate {
     0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
     70% { transform: scale(1.1) rotate(5deg); opacity: 1; }
@@ -75,7 +74,7 @@ button:hover { background-color: #0056b3; }
 #new-game-btn { background-color: #17a2b8; }
 #new-game-btn:hover { background-color: #138496; }
 
-/* Tweak 4: All-Time Winners Leaderboard */
+/* All-Time Winners Leaderboard */
 #all-time-leaderboard {
     margin-top: 30px;
     padding-top: 20px;
@@ -96,13 +95,20 @@ button:hover { background-color: #0056b3; }
     font-weight: 500;
 }
 
-
-
-/* --- New Card Selection Styles --- */
+/* --- Card Selection Styles --- */
 #card-selection-area {
     margin-top: 20px;
 }
-
+#current-hand-total {
+    font-size: 1.5em;
+    font-weight: bold;
+    min-height: 27px; /* Prevent layout shift */
+    transition: all 0.3s ease;
+}
+#current-hand-total.skip7-bonus {
+    color: #28a745;
+    transform: scale(1.1);
+}
 #card-selection-container {
     display: flex;
     flex-wrap: wrap;
@@ -110,7 +116,6 @@ button:hover { background-color: #0056b3; }
     gap: 8px;
     margin: 15px 0;
 }
-
 .card-button {
     background-color: #fff;
     border: 2px solid #007bff;
@@ -126,12 +131,9 @@ button:hover { background-color: #0056b3; }
     justify-content: center;
     align-items: center;
 }
-
 .card-button:hover {
     background-color: #e9ecef;
 }
-
-/* This is the style for a selected card (bigger and different color) */
 .card-button.selected {
     background-color: #007bff;
     color: #fff;
@@ -139,76 +141,53 @@ button:hover { background-color: #0056b3; }
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
     border-color: #0056b3;
 }
-
 .log-score-button {
     width: 100%;
 }
 
-#current-hand-total {
-    font-size: 1.5em;
-}
-
-/* --- New Action Card Styles --- */
+/* --- Action Card Styles --- */
 #action-card-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
-    margin-top: 15px; /* Space between number and action cards */
+    margin-top: 15px;
     padding-top: 15px;
     border-top: 2px dashed #e0e0e0;
+    margin-bottom: 15px;
 }
-
 .action-card {
     background-color: #fff;
     border: 2px solid #ffc107; /* Vibrant yellow/gold border */
     color: #ffc107;
     font-weight: bold;
     font-size: 1.2em;
-    width: 70px; /* A bit wider for text/icons */
+    width: 70px;
     height: 65px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     display: flex;
-    flex-direction: column; /* Stack icon and text */
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     line-height: 1.1;
 }
-
-/* Style for the emoji/icon inside the action card */
 .action-card .icon {
     font-size: 1.6em;
 }
-
-/* Style for the text label below the icon */
 .action-card .label {
     font-size: 0.6em;
     text-transform: uppercase;
     font-weight: 700;
     margin-top: 3px;
 }
-
 .action-card:hover {
     background-color: #fff8e1; /* Light yellow on hover */
 }
-
-/* Selected state for action cards (only for *2 and +6) */
 .action-card.selected {
     background-color: #ffc107;
     color: #343a40;
     transform: scale(1.15);
     box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
-}
-
-#current-hand-total {
-    font-size: 1.5em;
-    transition: color 0.3s ease;
-}
-
-/* Special style for Skip 7 bonus announcement */
-#current-hand-total.skip7-bonus {
-    color: #28a745;
-    transform: scale(1.1);
 }

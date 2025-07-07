@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- EVENT LISTENERS ---
     addPlayerBtn.addEventListener('click', addPlayer);
     startGameBtn.addEventListener('click', startGame);
-    logScoreBtn.addEventListener('click', processTurn);
+    logScoreBtn.addEventListener('click', () => processTurn());
     newGameBtn.addEventListener('click', resetGame);
     playerNameInput.addEventListener('keyup', e => { if (e.key === 'Enter') addPlayer(); });
     

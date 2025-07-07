@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE VARIABLES ---
-    const version = "v1.1"; // Version number
+    const version = "v1.2"; // Updated version number
     let players = [];
     let allTimeWinners = [];
     let currentPlayerIndex = 0;
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bonusSound = document.getElementById('bonus-sound');
 
     // --- INITIALIZATION ---
-    versionInfo.textContent = version; // Set version number on screen
+    versionInfo.textContent = version;
     initializeLeaderboard();
     
     // --- EVENT LISTENERS ---
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         processTurn();
     });
 
-    // --- SETUP & LEADERBOARD FUNCTIONS (No Changes Here) ---
+    // --- SETUP & LEADERBOARD FUNCTIONS ---
     function addPlayer() {
         const name = playerNameInput.value.trim();
         if (name) {
@@ -229,20 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCurrentHandTotalDisplay();
     }
 
-    // --- NEW: More robust celebration function ---
     function triggerCelebration() {
-        // Sound is triggered first, directly from user click context
         const playPromise = bonusSound.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                console.error("Audio playback failed. User may need to interact with the page first or check system mute.", error);
+                console.error("Audio playback failed.", error);
             }).then(() => {
-                // Once playing, ensure it starts from the beginning on subsequent plays
                 bonusSound.currentTime = 0;
             });
         }
         
-        // Launch fireworks
         const duration = 1 * 1000;
         const end = Date.now() + duration;
         (function frame() {
@@ -252,16 +248,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }());
     }
 
+    // --- REWRITTEN & FIXED ---
     function triggerSkip7Bonus() {
         const baseScore = currentTurnCards.reduce((sum, value) => sum + value, 0);
         const finalScore = (baseScore * currentMultiplier) + currentBonusPoints + 15;
-        
         players[currentPlayerIndex].score += finalScore;
-        const turnsRemainingInRound = players.length - turnsThisRound - 1;
-        turnsThisRound += turnsRemainingInRound;
 
-        if (checkForWinner()) return;
-        advanceToNextPlayer();
+        // Check for a winner IMMEDIATELY after awarding score.
+        // If there's a winner, the game ends and we don't need to advance the turn.
+        // The checkForWinner function handles the UI change.
+        if (checkForWinner()) {
+            return;
+        }
+
+        // If no winner, the round ends. We must set up the NEXT round.
+        roundNumber++;
+        turnsThisRound = 0; // A new round starts with 0 turns taken.
+        roundStartPlayerIndex = (roundStartPlayerIndex + 1) % players.length;
+        currentPlayerIndex = roundStartPlayerIndex;
+
+        // NOW, reset the state for the new turn and update the UI.
+        // This is where isProcessingBonus is safely set back to false.
+        resetTurnState(); 
         updateTurnUI();
     }
 
@@ -318,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- END GAME FUNCTIONS (No Changes Here) ---
+    // --- END GAME FUNCTIONS ---
     function checkForWinner() {
         const winner = players.find(p => p.score > winningScore);
         if (winner) {
@@ -339,6 +347,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function resetGame() {
+        // --- ADDED THIS LINE AS A FAILSAFE ---
+        isProcessingBonus = false; 
+
         players = [];
         currentPlayerIndex = 0;
         roundStartPlayerIndex = 0;

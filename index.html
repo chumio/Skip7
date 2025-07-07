@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkipSeven Game</title>
     <link rel="stylesheet" href="style.css">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkipSeven Game</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Add this line for the fireworks effect -->
+    <!-- For the fireworks effect -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
@@ -35,16 +30,15 @@
             <p id="round-counter"></p>
             
             <p class="rules">
-                <strong>Rules:</strong> Cards 0-12. Use '.' to separate. Use '*' to multiply. First to 201 wins!
+                <strong>Rules:</strong> Select up to 7 cards. First to 201 wins!
             </p>
 
-           <!-- New Interactive Card Selection -->
+            <!-- Interactive Card Selection Area -->
             <div id="card-selection-area">
                 <p>Current Hand Value: <b id="current-hand-total">0</b></p>
-               <div id="card-selection-container">
-                    <!-- Cards will be dynamically generated here -->
+                <div id="card-selection-container">
+                    <!-- Number cards will be generated here -->
                 </div>
-                <!-- New container for our special action cards -->
                 <div id="action-card-container">
                     <!-- Action cards will be generated here -->
                 </div>
@@ -70,7 +64,9 @@
             </ul>
         </div>
     </div>
-     <audio id="bonus-sound" src="bonus-chime.mp3"></audio>
+
+    <!-- For the bonus sound effect -->
+    <audio id="bonus-sound" src="bonus-chime.mp3"></audio>
     <script src="script.js"></script>
 </body>
 </html>

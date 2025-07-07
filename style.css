@@ -267,3 +267,35 @@ button:hover { background-color: #0056b3; }
     <script src="script.js"></script>
 </body>
 </html>
+/* --- Update Notification Bar Style --- */
+#update-notification {
+    position: fixed; /* Stays at the top even when you scroll */
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    z-index: 1000; /* Stays on top of everything else */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    font-weight: bold;
+    display: flex; /* Use flexbox for easy alignment */
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+#update-notification.hidden {
+    display: none;
+}
+
+#update-refresh-btn {
+    background-color: #fff;
+    color: #007bff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
